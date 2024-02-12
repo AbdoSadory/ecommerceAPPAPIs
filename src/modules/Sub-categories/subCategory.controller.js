@@ -72,7 +72,7 @@ export const updateSubCategory = async (req, res, next) => {
   // 3- destructuring _id from the request authUser
   const { _id } = req.authUser
 
-  // 4- check if the SubCategory is exist bu using subCategoryId
+  // 4- check if the SubCategory is exist by using subCategoryId
   const isSubCategoryExisted = await SubCategory.findById(subCategoryId)
   if (!isSubCategoryExisted)
     return next(new Error('SubCategory not found', { cause: 404 }))
@@ -119,7 +119,6 @@ export const updateSubCategory = async (req, res, next) => {
         public_id: newPulicId,
       }
     )
-    console.log('🟢')
     isSubCategoryExisted.Image.secure_url = secure_url
   }
 
@@ -150,12 +149,16 @@ export const deleteSubCategory = async (req, res, next) => {
   }
 
   // 3- delete the sub-category folder from cloudinary
-  await cloudinaryConnection().api.delete_resources_by_prefix(
-    `${process.env.MAIN_FOLDER}/Categories/${subCategory.categoryId.folderId}/SubCategories/${subCategory.folderId}`
-  )
-  await cloudinaryConnection().api.delete_folder(
-    `${process.env.MAIN_FOLDER}/Categories/${subCategory.categoryId.folderId}/SubCategories/${subCategory.folderId}`
-  )
+  try {
+    await cloudinaryConnection().api.delete_resources_by_prefix(
+      `${process.env.MAIN_FOLDER}/Categories/${subCategory.categoryId.folderId}/SubCategories/${subCategory.folderId}`
+    )
+    await cloudinaryConnection().api.delete_folder(
+      `${process.env.MAIN_FOLDER}/Categories/${subCategory.categoryId.folderId}/SubCategories/${subCategory.folderId}`
+    )
+  } catch (error) {
+    return next(new Error('Error while deleting the Media'))
+  }
 
   res
     .status(200)
