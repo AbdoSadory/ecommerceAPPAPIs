@@ -58,7 +58,7 @@ export const signUp = async (req, res, next) => {
     phoneNumbers,
     addresses,
   })
-
+  req.savedDocuments = { model: User, _id: newUser._id }
   // 7- return the response
   res.status(201).json({
     success: true,

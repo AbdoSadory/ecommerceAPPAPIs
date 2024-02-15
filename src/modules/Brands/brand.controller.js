@@ -44,6 +44,8 @@ export const addBrand = async (req, res, next) => {
       folder: `${process.env.MAIN_FOLDER}/Categories/${subCategoryCheck.categoryId.folderId}/SubCategories/${subCategoryCheck.folderId}/Brands/${folderId}`,
     })
 
+  req.folder = `${process.env.MAIN_FOLDER}/Categories/${subCategoryCheck.categoryId.folderId}/SubCategories/${subCategoryCheck.folderId}/Brands/${folderId}`
+
   const brandObject = {
     name,
     slug,
@@ -55,7 +57,7 @@ export const addBrand = async (req, res, next) => {
   }
 
   const newBrand = await Brand.create(brandObject)
-
+  req.savedDocuments = { model: Brand, _id: newBrand._id }
   res.status(201).json({
     status: 'success',
     message: 'Brand added successfully',

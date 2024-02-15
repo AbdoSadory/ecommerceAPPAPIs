@@ -34,6 +34,7 @@ export const addSubCategory = async (req, res, next) => {
     await cloudinaryConnection().uploader.upload(req.file.path, {
       folder: `${process.env.MAIN_FOLDER}/Categories/${category.folderId}/SubCategories/${folderId}`,
     })
+  req.folder = `${process.env.MAIN_FOLDER}/Categories/${category.folderId}/SubCategories/${folderId}`
 
   // 6- generate the subCategory object
   const subCategory = {
@@ -46,6 +47,7 @@ export const addSubCategory = async (req, res, next) => {
   }
   // 7- create the subCategory
   const subCategoryCreated = await SubCategory.create(subCategory)
+  req.savedDocuments = { model: SubCategory, _id: subCategoryCreated._id }
   res.status(201).json({
     success: true,
     message: 'subCategory created successfully',
@@ -127,11 +129,12 @@ export const updateSubCategory = async (req, res, next) => {
 
   await isSubCategoryExisted.save()
   res.status(200).json({
-    message: 'Category updated successfully',
+    message: 'Sub-category updated successfully',
     data: isSubCategoryExisted,
   })
 }
 
+//============================delete SubCategory=============================//
 export const deleteSubCategory = async (req, res, next) => {
   const { subCategoryId } = req.params
 
@@ -139,7 +142,8 @@ export const deleteSubCategory = async (req, res, next) => {
   const subCategory = await SubCategory.findByIdAndDelete(
     subCategoryId
   ).populate('categoryId')
-  if (!subCategory) return next(new Error('Category not found', { cause: 404 }))
+  if (!subCategory)
+    return next(new Error('sub-category not found', { cause: 404 }))
 
   //2- delete the related brands
   const brands = await Brand.deleteMany({ subCategoryId })
@@ -162,5 +166,5 @@ export const deleteSubCategory = async (req, res, next) => {
 
   res
     .status(200)
-    .json({ success: true, message: 'Category deleted successfully' })
+    .json({ success: true, message: 'Sub-Category deleted successfully' })
 }
