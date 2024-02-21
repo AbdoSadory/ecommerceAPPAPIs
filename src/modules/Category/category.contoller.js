@@ -123,6 +123,11 @@ export const getAllCategories = async (req, res, next) => {
       populate: [
         {
           path: 'Brands',
+          populate: [
+            {
+              path: 'Products',
+            },
+          ],
         },
       ],
     },

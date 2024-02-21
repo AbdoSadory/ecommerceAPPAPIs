@@ -4,6 +4,7 @@ import Brand from '../../../DB/Models/brand.model.js'
 import subCategory from '../../../DB/Models/sub-category.model.js'
 import cloudinaryConnection from '../../utils/cloudinary.js'
 import generateUniqueString from '../../utils/generate-Unique-String.js'
+import axios from 'axios'
 
 //======================= add brand =======================//
 export const addBrand = async (req, res, next) => {
@@ -172,6 +173,7 @@ export const deleteBrand = async (req, res, next) => {
   // 1- destructuring the supplied data from request object
   const { brandId } = req.params
   const { categoryId, subCategoryId } = req.query
+  const { accesstoken } = req.headers
 
   // 2- check if the Brand is exist by using brandId
   const isBrandExisted = await Brand.findById(brandId).populate(
@@ -194,10 +196,26 @@ export const deleteBrand = async (req, res, next) => {
       new Error('There is no brand with this category id', { cause: 404 })
     )
 
-  //  5- delete the brand
-  const deletedBrand = await Brand.findByIdAndDelete(brandId)
+  //  5- delete the related Products of this brand by create request on http://localhost:3000/product/productsByBrandId
+  try {
+    await axios({
+      method: 'delete',
+      url: `http://localhost:3000/product/productsByBrandId?brandId=${brandId}`,
+      headers: {
+        accesstoken,
+      },
+    })
+  } catch (err) {
+    return next(
+      new Error(`Error while deleting Products of Brand Id : ${brandId}`)
+    )
+  }
 
-  // 6- delete the brand folder from cloudinary
+  //  6- delete the brand
+  const deletedBrand = await Brand.findByIdAndDelete(brandId)
+  if (!deletedBrand) return next(new Error('Error While deleting Brand Id'))
+
+  // 7- delete the brand folder from cloudinary
   try {
     await cloudinaryConnection().api.delete_resources_by_prefix(
       `${process.env.MAIN_FOLDER}/Categories/${isBrandExisted.categoryId.folderId}/SubCategories/${isBrandExisted.subCategoryId.folderId}/Brands/${isBrandExisted.folderId}`
