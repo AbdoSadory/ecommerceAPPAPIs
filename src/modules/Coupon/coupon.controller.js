@@ -86,7 +86,7 @@ export const validateCouponApi = async (req, res, next) => {
   // applyCouponValidation
   const isCouponValid = await applyCouponValidation(code, userId)
   if (isCouponValid.status) {
-    return next({ message: isCouponValid.msg, cause: isCouponValid.status })
+    return next({ message: isCouponValid.message, cause: isCouponValid.status })
   }
 
   res.json({ message: 'coupon is valid', coupon: isCouponValid })

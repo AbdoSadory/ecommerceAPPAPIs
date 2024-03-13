@@ -20,7 +20,10 @@ export const initiateApp = (app, express) => {
 
   db_connection()
 
-  app.get('/', (req, res) => res.json({ message: 'Hello E-Commerce!' }))
+  app.get('/', (req, res) => {
+    console.log('/')
+    return res.json({ message: 'Hello E-Commerce!' })
+  })
   app.use('/auth', routers.authRouter)
   app.use('/user', routers.userRouter)
   app.use('/category', routers.categoryRouter)
@@ -29,10 +32,12 @@ export const initiateApp = (app, express) => {
   app.use('/product', routers.productRouter)
   app.use('/cart', routers.cartRouter)
   app.use('/coupon', routers.couponRouter)
-
+  app.use('/order', routers.orderRouter)
+  app.use('*', (req, res) => {
+    console.log('Invalid URL')
+    return res.json({ message: 'Invalid URL' })
+  })
   app.use(globalResponse, rollbackUploadedFiles, rollbackSavedDocuments)
-
-  app.get('*', (req, res) => res.json({ message: 'Invalid URL' }))
 
   cronToChangeExpiredCoupons()
   gracefulShutdown()
