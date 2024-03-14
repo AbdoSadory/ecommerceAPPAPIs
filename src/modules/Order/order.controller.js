@@ -9,6 +9,14 @@ import Cart from '../../../DB/Models/cart.model.js'
 import { DateTime } from 'luxon'
 import { qrCodeGeneration } from '../../utils/qr-code.js'
 import { applyCouponValidation } from '../../utils/coupon.validation.js'
+import orderModel from '../../../DB/Models/order.model.js'
+import {
+  confirmPaymentIntent,
+  createCheckoutSession,
+  createPaymentIntent,
+  createStripeCoupon,
+  refundPaymentIntent,
+} from '../../payment-handler/stripe.js'
 
 export const createOrder = async (req, res, next) => {
   //destructure the request body
@@ -238,10 +246,105 @@ export const delieverOrder = async (req, res, next) => {
       cause: 404,
     })
 
+  res.status(200).json({
+    message: 'Order has been delivered successfully',
+    order: updateOrder,
+  })
+}
+
+// ======================= order payment with stipe =======================//
+export const payWithStripe = async (req, res, next) => {
+  const { orderId } = req.params
+  const { _id: userId } = req.authUser
+
+  // get order details from our database
+  const order = await orderModel.findOne({
+    _id: orderId,
+    user: userId,
+    orderStatus: 'Pending',
+  })
+  if (!order)
+    return next({
+      message: "Order has not been found or can't be paid",
+      cause: 404,
+    })
+
+  const paymentObject = {
+    customer_email: req.authUser.email,
+    metadata: { orderId: order._id.toString() },
+    discounts: [],
+    line_items: order.orderItems.map((item) => {
+      return {
+        price_data: {
+          currency: 'EGP',
+          product_data: {
+            name: item.title,
+          },
+          unit_amount: item.price * 100, // in cents
+        },
+        quantity: item.quantity,
+      }
+    }),
+  }
+  // coupon check
+  if (order.coupon) {
+    const stripeCoupon = await createStripeCoupon({ couponId: order.coupon })
+    if (stripeCoupon.status)
+      return next({ message: stripeCoupon.message, cause: 400 })
+
+    paymentObject.discounts.push({
+      coupon: stripeCoupon.id,
+    })
+  }
+
+  const checkoutSession = await createCheckoutSession(paymentObject)
+  const paymentIntent = await createPaymentIntent({
+    amount: order.totalPrice,
+    currency: 'EGP',
+  })
+
+  order.payment_intent = paymentIntent.id
+  await order.save()
+
+  res.status(200).json({ checkoutSession, paymentIntent })
+}
+
+//====================== apply webhook locally to confirm the  order =======================//
+export const stripeWebhookLocal = async (req, res, next) => {
+  const orderId = req.body.data.object.metadata.orderId
+
+  const confirmedOrder = await Order.findById(orderId)
+  if (!confirmedOrder) return next({ message: 'Order not found', cause: 404 })
+
+  await confirmPaymentIntent({ paymentIntentId: confirmedOrder.payment_intent })
+
+  confirmedOrder.isPaid = true
+  confirmedOrder.paidAt = DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+  confirmedOrder.orderStatus = 'Paid'
+
+  await confirmedOrder.save()
+  res.status(200).json({ message: 'webhook received' })
+}
+
+export const refundOrder = async (req, res, next) => {
+  const { orderId } = req.params
+
+  const findOrder = await Order.findOne({ _id: orderId, orderStatus: 'Paid' })
+  if (!findOrder)
+    return next({
+      message: 'Order not found or cannot be refunded',
+      cause: 404,
+    })
+
+  // refund the payment intent
+  const refund = await refundPaymentIntent({
+    paymentIntentId: findOrder.payment_intent,
+  })
+
+  findOrder.orderStatus = 'Refunded'
+  await findOrder.save()
+
   res
     .status(200)
-    .json({
-      message: 'Order has been delivered successfully',
-      order: updateOrder,
-    })
+    .json({ message: 'Order refunded successfully', order: refund })
 }

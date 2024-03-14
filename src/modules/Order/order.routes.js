@@ -25,4 +25,20 @@ orderRouter.put(
   expressAsyncHandler(orderController.delieverOrder)
 )
 
+orderRouter.post(
+  '/stripePay/:orderId',
+  auth([systemRoles.USER]),
+  expressAsyncHandler(orderController.payWithStripe)
+)
+
+orderRouter.post(
+  '/webhook',
+  expressAsyncHandler(orderController.stripeWebhookLocal)
+)
+
+orderRouter.post(
+  '/refund/:orderId',
+  auth([systemRoles.SUPER_ADMIN, systemRoles.ADMIN]),
+  expressAsyncHandler(orderController.refundOrder)
+)
 export default orderRouter

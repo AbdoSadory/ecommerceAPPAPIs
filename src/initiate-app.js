@@ -34,7 +34,7 @@ export const initiateApp = (app, express) => {
   app.use('/coupon', routers.couponRouter)
   app.use('/order', routers.orderRouter)
   app.use('*', (req, res) => {
-    console.log('Invalid URL')
+    console.log('Invalid URL', req.url)
     return res.json({ message: 'Invalid URL' })
   })
   app.use(globalResponse, rollbackUploadedFiles, rollbackSavedDocuments)
