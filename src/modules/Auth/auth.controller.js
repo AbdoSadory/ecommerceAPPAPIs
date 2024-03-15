@@ -96,7 +96,7 @@ export const verifyEmail = async (req, res, next) => {
     { new: true }
   )
   if (!user) {
-    return next(new Error('User not found', { cause: 404 }))
+    return next(new Error("User hasn't been found", { cause: 404 }))
   }
 
   res.status(200).json({
@@ -125,7 +125,11 @@ export const signIn = async (req, res, next) => {
   // get user by email
   const user = await User.findOne({ email, isEmailVerified: true })
   if (!user) {
-    return next(new Error('Invalid login credentails', { cause: 404 }))
+    return next(
+      new Error("Invalid login credentails or email isn't verified", {
+        cause: 404,
+      })
+    )
   }
   // check password
   const isPasswordValid = bcrypt.compareSync(password, user.password)

@@ -1,11 +1,14 @@
 import bcrypt from 'bcrypt'
 import User from '../../../DB/Models/user.model.js'
-
+import jwt from 'jsonwebtoken'
+import sendEmailService from '../../services/send-email.service.js'
 /**
  * check if user is existed
  * check if it's verified
  * check if new email is already used for another user
+ * send Verification Email again to verify the new email
  * if password is send, hash Password and save it
+ * update any field has been sent
  * update
  */
 export const updateUser = async (req, res, next) => {
@@ -24,21 +27,39 @@ export const updateUser = async (req, res, next) => {
       new Error('You have to verified your account first', { cause: 403 })
     )
   }
-  // check if new email is already used for another user
   if (email) {
-    const isEmailExisted = await User.findOne({ email })
-    if (isEmailExisted && isEmailExisted._id.toString() !== userId)
+    // check if new email is already used for another user
+    const isEmailExisted = await User.findOne({ _id: { $ne: userId }, email })
+    if (isEmailExisted)
       return next(
         new Error(
           'This Email is already existed for another user, try another one',
-          { cause: 400 }
+          { cause: 409 }
         )
       )
 
+    // create token of this email for verification
+    const usertoken = jwt.sign({ email }, process.env.JWT_SECRET_VERFICATION, {
+      expiresIn: '2m',
+    })
+
+    // send verification email
+    const isEmailSent = await sendEmailService({
+      to: email,
+      subject: 'Email Verification',
+      message: `
+          <h2>please clich on this link to verfiy your email</h2>
+          <a href="http://localhost:3000/auth/verify-email?token=${usertoken}">Verify Email</a>
+          `,
+    })
+    if (!isEmailSent) {
+      return next(new Error('Email is not sent, please try again later'))
+    }
     user.email = email
+    user.isEmailVerified = false
   }
 
-  // if password is send, hash Password and save it
+  // if password is sent, hash Password and save it
   if (password) {
     const hashedNewPassword = bcrypt.hashSync(
       password,
@@ -49,8 +70,9 @@ export const updateUser = async (req, res, next) => {
   username && (user.username = username)
   age && (user.age = age)
   role && (user.role = role)
-  phoneNumbers.length && (user.phoneNumbers = phoneNumbers)
-  addresses.length && (user.addresses = addresses)
+  phoneNumbers?.length && (user.phoneNumbers = phoneNumbers)
+  addresses?.length && (user.addresses = addresses)
+  user['__v'] += 1
 
   const updatedUser = await user.save()
   res

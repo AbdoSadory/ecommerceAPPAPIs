@@ -16,11 +16,7 @@ export const updateUserSchema = {
     password: Joi.string().min(8),
     phoneNumbers: Joi.array().items(Joi.string()),
     addresses: Joi.array().items(Joi.string()),
-    role: Joi.string().valid(
-      systemRoles.USER,
-      systemRoles.ADMIN,
-      systemRoles.SUPER_ADMIN
-    ),
+    role: Joi.string().valid(...Object.values(systemRoles)),
     age: Joi.number().min(18).max(100),
   }),
 }

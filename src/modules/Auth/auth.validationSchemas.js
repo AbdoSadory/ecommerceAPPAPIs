@@ -9,8 +9,15 @@ export const signUpSchema = {
     phoneNumbers: Joi.array().items(Joi.string()).required(),
     addresses: Joi.array().items(Joi.string()).required(),
     role: Joi.string()
-      .valid(systemRoles.USER, systemRoles.ADMIN, systemRoles.SUPER_ADMIN)
+      .valid(...Object.values(systemRoles))
       .required(),
     age: Joi.number().min(18).max(100).required(),
+  }),
+}
+
+export const signInSchema = {
+  body: Joi.object({
+    email: Joi.string().email().lowercase().required(),
+    password: Joi.string().min(8).required(),
   }),
 }
