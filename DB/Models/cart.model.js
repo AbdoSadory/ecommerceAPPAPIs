@@ -40,6 +40,14 @@ const cartSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: String,
+    },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   {
     timestamps: true,

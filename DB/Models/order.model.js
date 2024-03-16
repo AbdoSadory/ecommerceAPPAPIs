@@ -52,6 +52,14 @@ const orderSchema = new mongoose.Schema(
 
     cancelledAt: { type: String },
     cancelledBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // to know who cancelled it
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: String,
+    },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 )

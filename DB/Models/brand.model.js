@@ -22,6 +22,14 @@ const brandSchema = new Schema(
       ref: 'Category',
       required: true,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: String,
+    },
+    deletedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   {
     timestamps: true,
