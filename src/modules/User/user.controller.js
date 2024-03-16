@@ -63,6 +63,7 @@ export const updateUser = async (req, res, next) => {
     if (!isEmailSent) {
       return next(new Error('Email is not sent, please try again later'))
     }
+
     user.email = email
     user.isEmailVerified = false
   }
