@@ -132,7 +132,6 @@ export const getAllCategories = async (req, res, next) => {
       ],
     },
   ])
-  // console.log(categories);
   res.status(200).json({
     success: true,
     message: 'Categories fetched successfully',
@@ -173,4 +172,29 @@ export const deleteCategory = async (req, res, next) => {
   res
     .status(200)
     .json({ success: true, message: 'Category deleted successfully' })
+}
+
+//============================== get all categories ==============================//
+export const getCategory = async (req, res, next) => {
+  // nested populate
+  const category = await Category.find().populate([
+    {
+      path: 'subcategories',
+      populate: [
+        {
+          path: 'Brands',
+          populate: [
+            {
+              path: 'Products',
+            },
+          ],
+        },
+      ],
+    },
+  ])
+  res.status(200).json({
+    success: true,
+    message: 'Category has been fetched successfully',
+    category,
+  })
 }
