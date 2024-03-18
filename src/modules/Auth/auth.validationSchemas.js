@@ -21,3 +21,17 @@ export const signInSchema = {
     password: Joi.string().min(8).required(),
   }),
 }
+export const forgetPasswordSchema = {
+  body: Joi.object({
+    email: Joi.string().email().lowercase().required(),
+  }),
+}
+export const resetPasswordSchema = {
+  body: Joi.object({
+    otp: Joi.string().required(),
+    email: Joi.string().email().lowercase().required(),
+    newPassword: Joi.string().min(8).required(),
+  })
+    .with('otp', 'email')
+    .with('email', 'newPassword'),
+}

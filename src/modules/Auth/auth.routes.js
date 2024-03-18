@@ -17,5 +17,14 @@ router.post(
   validationMiddleware(authValidationSchemas.signInSchema),
   expressAsyncHandler(authController.signIn)
 )
-
+router.post(
+  '/forgetPassword',
+  validationMiddleware(authValidationSchemas.forgetPasswordSchema),
+  expressAsyncHandler(authController.forgetPassword)
+)
+router.post(
+  '/resetPassword',
+  validationMiddleware(authValidationSchemas.resetPasswordSchema),
+  expressAsyncHandler(authController.getOTPandNewPassword)
+)
 export default router

@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
-
 import User from '../../../DB/Models/user.model.js'
 import sendEmailService from '../../services/send-email.service.js'
+import generateUniqueString from '../../utils/generate-Unique-String.js'
+import OTP from '../../../DB/Models/OTP.model.js'
 
 // ========================================= SignUp API ================================//
 
@@ -159,4 +160,128 @@ export const signIn = async (req, res, next) => {
       token,
     },
   })
+}
+
+/**
+ * Check if user in DB using email
+ * create unique random otp (length=6)
+ * Hashing the otp
+ * check if user gets otp doc in db
+ * if TRUE, update it with new hashed OTP
+ * if FALSE, in case it's first time to forget password , create OTP document with email and hashed OTP code
+ * send OTP through email
+ */
+export const forgetPassword = async (req, res, next) => {
+  const { email } = req.body
+  // Check if user in DB using email
+  const isUserExisted = await User.findOne({ email, isDeleted: false })
+
+  if (!isUserExisted) {
+    return next(
+      new Error('No User with this email has been found', { cause: 404 })
+    )
+  }
+  // create unique random otp (length=6)
+  const otp = generateUniqueString(6)
+  // Hashing the otp
+  const hashedOTP = bcrypt.hashSync(otp, parseInt(process.env.SALT_ROUNDS))
+  const hashedOTPToBeSent = jwt.sign(otp, process.env.JWT_OTP)
+
+  // check if user gets otp doc in db
+  // if TRUE, update it with new hashed OTP
+  // if FALSE, in case it's first time to forget password , create OTP document with email and hashed OTP code
+  const isOTPDocExisted = await OTP.findOne({ email })
+
+  if (isOTPDocExisted) {
+    isOTPDocExisted.otp = hashedOTP
+    const updatedOTP = await isOTPDocExisted.save()
+    if (!updatedOTP) {
+      return next(
+        new Error('Error while updating OTP with new one, please try again')
+      )
+    }
+  } else {
+    const newOTP = await OTP.create({
+      email,
+      otp: hashedOTP,
+    })
+    if (!newOTP) {
+      return next(new Error('Error while creating OTP, please try again'))
+    }
+  }
+  // send OTP through email
+  const isEmailSent = await sendEmailService({
+    to: email,
+    subject: 'OTP Reset Password',
+    message: `
+        <h1>please send this otp with your email and new password to reset your password</h1>
+        <p>OTP: ${hashedOTPToBeSent}</p>
+        `,
+  })
+  if (!isEmailSent) {
+    return next(new Error('Email is not sent, please try again later'))
+  }
+
+  res.status(200).json({
+    message: 'Please check your email inbox and send us the otp',
+  })
+}
+
+/**
+ * Verify the Email user if it's existed in OTP collection
+ * check the OTP if it's not used before
+ * Decrypt the recieved OTP
+ * compare OTP for authentication case
+ * hashing the new password
+ * Get the user and update password with the new one
+ * send back the user data
+ */
+export const getOTPandNewPassword = async (req, res, next) => {
+  const { otp, email, newPassword } = req.body
+  // Verify the Email user if it's existed in OTP collection
+  const isEmailExistedOTP = await OTP.findOne({ email })
+  if (!isEmailExistedOTP) {
+    return next(new Error('Invalid Email, Please try again', { cause: 401 }))
+  }
+  // check the OTP if it's not used before
+  if (isEmailExistedOTP.isUsed) {
+    return next(
+      new Error('This OTP has been used before, Please try again', {
+        cause: 401,
+      })
+    )
+  }
+
+  // Decrypt the recieved OTP
+  const decryptedOTP = jwt.verify(otp, process.env.JWT_OTP)
+
+  // compare OTP for authentication case
+  const isOTPRight = bcrypt.compareSync(decryptedOTP, isEmailExistedOTP.otp)
+  if (!isOTPRight)
+    return next(
+      new Error('Invalid OTP, Please try again', {
+        cause: 401,
+      })
+    )
+  // hashing the new password
+  const hashingNewPassword = bcrypt.hashSync(
+    newPassword,
+    parseInt(process.env.SALT_ROUNDS)
+  )
+  // Get the user and update password with the new one
+  const getUser = await User.findOne({
+    email,
+    isDeleted: false,
+  })
+  if (!getUser)
+    return next(new Error('No User with this Email', { cause: 404 }))
+
+  getUser.password = hashingNewPassword
+  await getUser.save()
+  isEmailExistedOTP.isUsed = true
+  await isEmailExistedOTP.save()
+  // send back the user data
+  res
+    .status(200)
+    .json({ message: 'reset password successfully', user: getUser })
 }
