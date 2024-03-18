@@ -23,3 +23,17 @@ export const getUserSchema = {
     userId: Joi.string().custom(isObjectId),
   }),
 }
+export const updatePasswordSchema = {
+  body: Joi.object({
+    oldPassword: Joi.string().trim().alphanum().min(6).required(),
+    newPassword: Joi.string()
+      .trim()
+      .alphanum()
+      .min(6)
+      .disallow(Joi.ref('oldPassword'))
+      .required()
+      .messages({
+        '*': 'new password should not be the same like old password and with minimum length 6 characters',
+      }),
+  }).with('newPassword', 'oldPassword'),
+}

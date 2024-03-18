@@ -91,7 +91,9 @@ export const updateUser = async (req, res, next) => {
 
 /**
  * check if user is existed
+ * check if user's email is verified
  * update the account if it's existed with isDeleted and deletedAt
+ * soft deletion of all records attached to this user
  */
 export const deleteUser = async (req, res, next) => {
   const { id: userId } = req.authUser
@@ -191,10 +193,62 @@ export const deleteUser = async (req, res, next) => {
 export const getUserProfile = async (req, res, next) => {
   const { userId } = req.params
   // check if user is existed
+  const user = await User.findOne({ _id: userId, isDeleted: false })
+  if (!user) {
+    return next(new Error('No User with this id', { cause: 404 }))
+  }
+
+  res.status(200).json({ message: 'User', user })
+}
+
+export const getUserPrivateProfile = async (req, res, next) => {
+  const { id: userId } = req.authUser
+  // check if user is existed
   const user = await User.findById(userId)
   if (!user) {
     return next(new Error('No User with this id', { cause: 404 }))
   }
 
   res.status(200).json({ message: 'User', user })
+}
+/**
+ * check if user is still existed in DB
+ * check if oldPassword equals the user password which came from DB
+ * hashing the new password
+ * update it 🔥
+ */
+export const updatePassword = async (req, res, next) => {
+  const { id: userId } = req.authUser
+
+  const { oldPassword, newPassword } = req.body
+  // check if user is still existed in DB
+  const isUserExisted = await User.findOne({ _id: userId, isDeleted: false })
+
+  if (!isUserExisted) {
+    return next(
+      new Error('No User with this id has been found', { cause: 404 })
+    )
+  }
+  // check if oldPassword equals the user password which came from DB
+  const isOldPasswordMatchUserPassword = bcrypt.compareSync(
+    oldPassword,
+    isUserExisted.password
+  )
+  if (!isOldPasswordMatchUserPassword) {
+    return next(
+      new Error("Old password isn't match the user password", { cause: 401 })
+    )
+  }
+  // hashing the new password
+  const hashingNewPassword = bcrypt.hashSync(
+    newPassword,
+    parseInt(process.env.SALT_ROUNDS)
+  )
+  // update it 🔥
+  isUserExisted.password = hashingNewPassword
+  await isUserExisted.save()
+
+  res
+    .status(200)
+    .json({ message: "User's Password has been updated", user: isUserExisted })
 }

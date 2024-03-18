@@ -4,22 +4,28 @@ import * as userControllers from './user.controller.js'
 import { auth } from '../../middlewares/auth.middleware.js'
 import { endPointsRoles } from './user.endpoints.js'
 import { validationMiddleware } from '../../middlewares/validation.middleware.js'
-import { getUserSchema, updateUserSchema } from './user.validationSchemas.js'
+import * as userSchemas from './user.validationSchemas.js'
 const router = Router()
 
 router
-  .route('/:userId')
+  .route('/profile/:userId')
   .get(
     auth(endPointsRoles.GET_USER_PROFILE),
-    validationMiddleware(getUserSchema),
+    validationMiddleware(userSchemas.getUserSchema),
     expressAsyncHandler(userControllers.getUserProfile)
+  )
+router
+  .route('/myProfile')
+  .get(
+    auth(endPointsRoles.GET_MY_PROFILE),
+    expressAsyncHandler(userControllers.getUserPrivateProfile)
   )
 
 router
   .route('/')
   .put(
     auth(endPointsRoles.UPDATE_USER),
-    validationMiddleware(updateUserSchema),
+    validationMiddleware(userSchemas.updateUserSchema),
     expressAsyncHandler(userControllers.updateUser)
   )
   .delete(
@@ -27,4 +33,10 @@ router
     expressAsyncHandler(userControllers.deleteUser)
   )
 
+router.put(
+  '/updatePassword',
+  auth(endPointsRoles.UPDATE_PASSWORD_USER),
+  validationMiddleware(userSchemas.updatePasswordSchema),
+  expressAsyncHandler(userControllers.updatePassword)
+)
 export default router
