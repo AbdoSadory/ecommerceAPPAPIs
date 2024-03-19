@@ -57,7 +57,10 @@ export const addSubCategory = async (req, res, next) => {
 
 //============================All SubCategories with Brands=======================//
 export const allSubCategoriesWithBrands = async (req, res, next) => {
-  const subCategories = await SubCategory.find().populate('Brands')
+  const { categoryId } = req.query
+  let query = {}
+  categoryId && (query.categoryId = categoryId)
+  const subCategories = await SubCategory.find(query).populate('Brands')
 
   if (!subCategories)
     return next(new Error('Error while getting sub-categories'))
@@ -169,16 +172,14 @@ export const deleteSubCategory = async (req, res, next) => {
     .json({ success: true, message: 'Sub-Category deleted successfully' })
 }
 
-//============================ SubCategory with Brands=======================//
+//============================ get SubCategory=======================//
 export const getSubCategory = async (req, res, next) => {
   const subCategory = await SubCategory.find().populate('Brands')
 
   if (!subCategory) return next(new Error('Error while getting sub-category'))
 
-  res
-    .status(200)
-    .json({
-      message: 'Sub-Category has been fetched successfully',
-      subCategory,
-    })
+  res.status(200).json({
+    message: 'Sub-Category has been fetched successfully',
+    subCategory,
+  })
 }
