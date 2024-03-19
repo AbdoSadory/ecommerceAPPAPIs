@@ -168,3 +168,17 @@ export const deleteSubCategory = async (req, res, next) => {
     .status(200)
     .json({ success: true, message: 'Sub-Category deleted successfully' })
 }
+
+//============================ SubCategory with Brands=======================//
+export const getSubCategory = async (req, res, next) => {
+  const subCategory = await SubCategory.find().populate('Brands')
+
+  if (!subCategory) return next(new Error('Error while getting sub-category'))
+
+  res
+    .status(200)
+    .json({
+      message: 'Sub-Category has been fetched successfully',
+      subCategory,
+    })
+}

@@ -174,7 +174,7 @@ export const deleteCategory = async (req, res, next) => {
     .json({ success: true, message: 'Category deleted successfully' })
 }
 
-//============================== get all categories ==============================//
+//============================== get category ==============================//
 export const getCategory = async (req, res, next) => {
   // nested populate
   const category = await Category.find().populate([

@@ -24,18 +24,21 @@ router.get(
   expressAsyncHandler(subCategoryController.allSubCategoriesWithBrands)
 )
 
-router.put(
-  '/:subCategoryId',
-  auth(endPointsRoles.UPDATE_SUB_CATEGORY),
-  multerMiddleHost({ extensions: allowedExtensions.image }).single('image'),
-  validationMiddleware(subCategorySchemas.updateSubCategorySchema),
-  expressAsyncHandler(subCategoryController.updateSubCategory)
-)
-
-router.delete(
-  '/:subCategoryId',
-  auth(endPointsRoles.DELETE_SUB_CATEGORY),
-  validationMiddleware(subCategorySchemas.deleteSubCategorySchema),
-  expressAsyncHandler(subCategoryController.deleteSubCategory)
-)
+router
+  .route('/:subCategoryId')
+  .get(
+    auth(endPointsRoles.GET_SUB_CATEGORY),
+    expressAsyncHandler(subCategoryController.getSubCategory)
+  )
+  .put(
+    auth(endPointsRoles.UPDATE_SUB_CATEGORY),
+    multerMiddleHost({ extensions: allowedExtensions.image }).single('image'),
+    validationMiddleware(subCategorySchemas.updateSubCategorySchema),
+    expressAsyncHandler(subCategoryController.updateSubCategory)
+  )
+  .delete(
+    auth(endPointsRoles.DELETE_SUB_CATEGORY),
+    validationMiddleware(subCategorySchemas.deleteSubCategorySchema),
+    expressAsyncHandler(subCategoryController.deleteSubCategory)
+  )
 export default router
