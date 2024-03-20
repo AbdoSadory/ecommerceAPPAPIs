@@ -6,6 +6,16 @@ const isObjectId = (value, helper) => {
   return isValid ? value : helper.message('invalid objectId')
 }
 
+export const getBrandsByCategory = {
+  query: Joi.object({
+    categoryId: Joi.string().custom(isObjectId).required(),
+  }),
+}
+export const getBrandsBySubCategory = {
+  query: Joi.object({
+    subCategoryId: Joi.string().custom(isObjectId).required(),
+  }),
+}
 export const updateBrandSchema = {
   params: Joi.object({ brandId: Joi.string().custom(isObjectId) }),
   body: Joi.object({ name: Joi.string(), oldPublicId: Joi.string() }),

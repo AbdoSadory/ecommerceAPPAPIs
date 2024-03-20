@@ -15,7 +15,18 @@ router.get(
   auth(endPointsRoles.GET_ALL_BRAND),
   expressAsyncHandler(brandController.getAllBrands)
 )
-
+router.get(
+  '/categoryBrands',
+  auth(endPointsRoles.GET_CATEGORY_BRANDS),
+  validationMiddleware(brandValidationSchemas.getBrandsByCategory),
+  expressAsyncHandler(brandController.getBrandsByCategory)
+)
+router.get(
+  '/subCategoryBrands',
+  auth(endPointsRoles.GET_SUB_CATEGORY_BRANDS),
+  validationMiddleware(brandValidationSchemas.getBrandsBySubCategory),
+  expressAsyncHandler(brandController.getBrandsBySubCategory)
+)
 router.post(
   '/',
   auth(endPointsRoles.ADD_BRAND),

@@ -1,7 +1,7 @@
 import slugify from 'slugify'
-
 import Brand from '../../../DB/Models/brand.model.js'
 import subCategory from '../../../DB/Models/sub-category.model.js'
+import categoryModel from '../../../DB/Models/category.model.js'
 import cloudinaryConnection from '../../utils/cloudinary.js'
 import generateUniqueString from '../../utils/generate-Unique-String.js'
 import axios from 'axios'
@@ -30,7 +30,10 @@ export const addBrand = async (req, res, next) => {
 
   // 4- categogry check
   if (categoryId != subCategoryCheck.categoryId._id)
-    return next({ message: 'Category not found', cause: 404 })
+    return next({
+      message: 'Category not found or not related to subCategory',
+      cause: 404,
+    })
 
   // 5 - generate the slug
   const slug = slugify(name, '-')
@@ -230,4 +233,37 @@ export const deleteBrand = async (req, res, next) => {
   res
     .status(200)
     .json({ message: 'Brand has been deleted successfully', deletedBrand })
+}
+
+// ===================== get brands of specific category ===================//
+export const getBrandsByCategory = async (req, res, next) => {
+  const { categoryId } = req.query
+
+  const isCategoryExisted = await categoryModel.findById(categoryId)
+  if (!isCategoryExisted)
+    return next(new Error('No category with this id', { cause: 404 }))
+
+  const brands = await Brand.find({ categoryId })
+  if (!brands)
+    return next(new Error('Error while getting all brands of Category'))
+  res
+    .status(200)
+    .json({ message: `All Brands of Category ID : ${categoryId}`, brands })
+}
+
+// ===================== get brands of specific sub-category ===================//
+export const getBrandsBySubCategory = async (req, res, next) => {
+  const { subCategoryId } = req.query
+
+  const isSubCategoryExisted = await subCategory.findById(subCategoryId)
+  if (!isSubCategoryExisted)
+    return next(new Error('No sub-category with this id', { cause: 404 }))
+
+  const brands = await Brand.find({ subCategoryId })
+  if (!brands)
+    return next(new Error('Error while getting all brands of Sub-Category'))
+  res.status(200).json({
+    message: `All Brands of Sub-Category ID : ${subCategoryId}`,
+    brands,
+  })
 }
