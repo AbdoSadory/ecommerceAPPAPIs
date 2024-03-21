@@ -6,6 +6,12 @@ const isObjectId = (value, helper) => {
   return isValid ? value : helper.message('invalid objectId')
 }
 
+export const allSubCategoriesPaginatedSchema = {
+  query: Joi.object({
+    page: Joi.number().min(1).required(),
+  }),
+}
+
 export const updateSubCategorySchema = {
   params: Joi.object({ subCategoryId: Joi.string().custom(isObjectId) }),
   body: Joi.object({ name: Joi.string(), oldPublicId: Joi.string() }),

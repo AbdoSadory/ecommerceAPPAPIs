@@ -4,6 +4,7 @@ import Brand from '../../../DB/Models/brand.model.js'
 import generateUniqueString from '../../utils/generate-Unique-String.js'
 import cloudinaryConnection from '../../utils/cloudinary.js'
 import slugify from 'slugify'
+import { APIFeatures } from '../../utils/api-features.js'
 
 //============================== add SubCategory ==============================//
 export const addSubCategory = async (req, res, next) => {
@@ -182,4 +183,44 @@ export const getSubCategory = async (req, res, next) => {
     message: 'Sub-Category has been fetched successfully',
     subCategory,
   })
+}
+
+//================================= get all subcategories paginated ====================//
+export const getAllSubCategoriesPaginated = async (req, res, next) => {
+  // destruct the page number from query
+  const { page } = req.query
+  // we set the size of SubCategories per page because we know our data 🔥
+  const size = 3
+  // we get total pages number to be sent in response to client
+  const pages = Math.ceil((await SubCategory.find().countDocuments()) / size)
+
+  const paginationFeature = new APIFeatures(SubCategory.find()).pagination({
+    page,
+    size,
+  })
+
+  const subcategories = await paginationFeature.mongooseQuery
+  if (!subcategories)
+    return next(
+      new Error('Error while getting Subcategories from search method')
+    )
+
+  res
+    .status(200)
+    .json({ message: `SubCategories`, pages, page: +page, subcategories })
+}
+
+//================================= get all subcategories filtered ====================//
+export const getAllSubCategoriesFiltered = async (req, res, next) => {
+  const { ...filter } = req.query
+
+  const filteredFeature = new APIFeatures(SubCategory.find()).filters(filter)
+
+  const subcategories = await filteredFeature.mongooseQuery
+  if (!subcategories)
+    return next(
+      new Error('Error while getting Subcategories from filter method')
+    )
+
+  res.status(200).json({ message: `SubCategories`, subcategories })
 }

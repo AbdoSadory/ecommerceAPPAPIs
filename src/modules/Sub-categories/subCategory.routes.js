@@ -23,7 +23,15 @@ router.get(
   auth(endPointsRoles.ALL_SUB_CATEGORIES_WITH_BRANDS),
   expressAsyncHandler(subCategoryController.allSubCategoriesWithBrands)
 )
-
+router.get(
+  '/paginatedSubCategories',
+  validationMiddleware(subCategorySchemas.allSubCategoriesPaginatedSchema),
+  expressAsyncHandler(subCategoryController.getAllSubCategoriesPaginated)
+)
+router.get(
+  '/filteredSubCategories',
+  expressAsyncHandler(subCategoryController.getAllSubCategoriesFiltered)
+)
 router
   .route('/:subCategoryId')
   .get(
