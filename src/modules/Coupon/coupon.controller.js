@@ -2,6 +2,7 @@ import Coupon from '../../../DB/Models/coupon.model.js'
 import CouponUsers from '../../../DB/Models/coupon-users.model.js'
 import User from '../../../DB/Models/user.model.js'
 import { applyCouponValidation } from '../../utils/coupon.validation.js'
+import { APIFeatures } from '../../utils/api-features.js'
 
 //============================== Add Coupon API ==============================//
 /**
@@ -90,4 +91,38 @@ export const validateCouponApi = async (req, res, next) => {
   }
 
   res.json({ message: 'coupon is valid', coupon: isCouponValid })
+}
+
+//================================= get all coupons paginated ====================//
+export const getAllCouponsPaginated = async (req, res, next) => {
+  // destruct the page number from query
+  const { page } = req.query
+  // we set the size of coupons per page because we know our data 🔥
+  const size = 2
+  // we get total pages number to be sent in response to client
+  const pages = Math.ceil((await Coupon.find().countDocuments()) / size)
+
+  const paginationFeature = new APIFeatures(Coupon.find()).pagination({
+    page,
+    size,
+  })
+
+  const coupons = await paginationFeature.mongooseQuery
+  if (!coupons)
+    return next(new Error('Error while getting coupons from search method'))
+
+  res.status(200).json({ message: `Coupons`, pages, page: +page, coupons })
+}
+
+//================================= get all coupons filtered ====================//
+export const getAllCouponsFiltered = async (req, res, next) => {
+  const { ...filter } = req.query
+
+  const filteredFeature = new APIFeatures(Coupon.find()).filters(filter)
+
+  const coupons = await filteredFeature.mongooseQuery
+  if (!coupons)
+    return next(new Error('Error while getting coupons from filter method'))
+
+  res.status(200).json({ message: `Coupons`, coupons })
 }

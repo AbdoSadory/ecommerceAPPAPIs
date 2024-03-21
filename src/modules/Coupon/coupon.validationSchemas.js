@@ -1,6 +1,12 @@
 import Joi from 'joi'
 import { generalValidationRule } from '../../utils/general.validation.rule.js'
 
+export const allCouponsPaginatedSchema = {
+  query: Joi.object({
+    page: Joi.number().min(1).required(),
+  }),
+}
+
 export const addCouponSchema = {
   body: Joi.object({
     couponCode: Joi.string().required().min(3).max(10).alphanum(),
