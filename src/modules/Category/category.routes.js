@@ -6,7 +6,8 @@ import { multerMiddleHost } from '../../middlewares/multer.js'
 import { endPointsRoles } from './category.endpoints.js'
 import { auth } from '../../middlewares/auth.middleware.js'
 import { allowedExtensions } from '../../utils/allowed-extensions.js'
-
+import * as categorySchemas from './category.validationSchemas.js'
+import { validationMiddleware } from '../../middlewares/validation.middleware.js'
 router.post(
   '/',
   auth(endPointsRoles.ADD_CATEGORY),
@@ -16,6 +17,15 @@ router.post(
   expressAsyncHandler(categoryController.addCategory)
 )
 router.get('/', expressAsyncHandler(categoryController.getAllCategories))
+router.get(
+  '/paginatedCategories',
+  validationMiddleware(categorySchemas.allCategoriesPaginatedSchema),
+  expressAsyncHandler(categoryController.getAllCategoriesPaginated)
+)
+router.get(
+  '/filteredCategories',
+  expressAsyncHandler(categoryController.getAllCategoriesFiltered)
+)
 router
   .route('/:categoryId')
   .get(
@@ -33,8 +43,6 @@ router
     auth(endPointsRoles.DELETE_CATEGORY),
     expressAsyncHandler(categoryController.deleteCategory)
   )
-
-
 
 router
 export default router

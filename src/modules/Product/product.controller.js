@@ -252,7 +252,7 @@ export const getAllProductsPaginated = async (req, res, next) => {
   // we set the size of products per page because we know our data 🔥
   const size = 3
   // we get total pages number to be sent in response to client
-  const pages = Math.ceil((await Product.find().countDocuments()) / 3)
+  const pages = Math.ceil((await Product.find().countDocuments()) / size)
 
   const paginationFeature = new APIFeatures(Product.find()).pagination({
     page,

@@ -46,6 +46,11 @@ export const getProductByIdSchema = {
   params: Joi.object({ productId: Joi.string().custom(isObjectId) }),
 }
 
+export const allProductsPaginatedSchema = {
+  query: Joi.object({
+    page: Joi.number().min(1).required(),
+  }),
+}
 export const searchProductSchema = {
   body: Joi.object({
     title: Joi.string(),

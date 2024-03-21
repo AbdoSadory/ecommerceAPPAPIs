@@ -5,6 +5,7 @@ import subCategory from '../../../DB/Models/sub-category.model.js'
 import Brand from '../../../DB/Models/brand.model.js'
 import cloudinaryConnection from '../../utils/cloudinary.js'
 import generateUniqueString from '../../utils/generate-Unique-String.js'
+import { APIFeatures } from '../../utils/api-features.js'
 
 //============================== add category ==============================//
 export const addCategory = async (req, res, next) => {
@@ -197,4 +198,40 @@ export const getCategory = async (req, res, next) => {
     message: 'Category has been fetched successfully',
     category,
   })
+}
+
+//================================= get all categories paginated ====================//
+export const getAllCategoriesPaginated = async (req, res, next) => {
+  // destruct the page number from query
+  const { page } = req.query
+  // we set the size of Categories per page because we know our data 🔥
+  const size = 1
+  // we get total pages number to be sent in response to client
+  const pages = Math.ceil((await Category.find().countDocuments()) / size)
+
+  const paginationFeature = new APIFeatures(Category.find()).pagination({
+    page,
+    size,
+  })
+
+  const categories = await paginationFeature.mongooseQuery
+  if (!categories)
+    return next(new Error('Error while getting categories from search method'))
+
+  res
+    .status(200)
+    .json({ message: `Categories`, pages, page: +page, categories })
+}
+
+//================================= get all categories filtered ====================//
+export const getAllCategoriesFiltered = async (req, res, next) => {
+  const { ...filter } = req.query
+
+  const filteredFeature = new APIFeatures(Category.find()).filters(filter)
+
+  const categories = await filteredFeature.mongooseQuery
+  if (!categories)
+    return next(new Error('Error while getting categories from filter method'))
+
+  res.status(200).json({ message: `Categories`, categories })
 }
