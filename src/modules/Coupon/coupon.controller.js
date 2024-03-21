@@ -3,6 +3,7 @@ import CouponUsers from '../../../DB/Models/coupon-users.model.js'
 import User from '../../../DB/Models/user.model.js'
 import { applyCouponValidation } from '../../utils/coupon.validation.js'
 import { APIFeatures } from '../../utils/api-features.js'
+import { DateTime } from 'luxon'
 
 //============================== Add Coupon API ==============================//
 /**
@@ -39,7 +40,6 @@ export const addCoupon = async (req, res, next) => {
     if (couponAmount > 100)
       return next({ message: 'Percentage should be less than 100', cause: 400 })
   }
-
   const couponObject = {
     couponCode,
     couponAmount,
@@ -48,24 +48,30 @@ export const addCoupon = async (req, res, next) => {
     isFixed,
     isPercentage,
     addedBy,
+    enabledAt: DateTime.now().toISO(),
+    enabledBy: addedBy,
   }
-
   const coupon = await Coupon.create(couponObject)
 
   const userIds = []
-  for (const user of Users) {
-    userIds.push(user.userId)
-  }
-  const isUserExist = await User.find({ _id: { $in: userIds } })
-  if (isUserExist.length != Users.length)
-    return next({
-      message: 'User is not found or duplicated in incoming data',
-      cause: 404,
-    })
+  let couponUsers
 
-  const couponUsers = await CouponUsers.create(
-    Users.map((ele) => ({ ...ele, couponId: coupon._id }))
-  )
+  if (Users?.length) {
+    for (const user of Users) {
+      userIds.push(user.userId)
+    }
+    const isUserExist = await User.find({ _id: { $in: userIds } })
+    if (isUserExist.length != Users.length)
+      return next({
+        message: 'User is not found or duplicated in incoming data',
+        cause: 404,
+      })
+
+    couponUsers = await CouponUsers.create(
+      Users.map((ele) => ({ ...ele, couponId: coupon._id }))
+    )
+  }
+
   res
     .status(201)
     .json({ message: 'Coupon added successfully', coupon, couponUsers })
