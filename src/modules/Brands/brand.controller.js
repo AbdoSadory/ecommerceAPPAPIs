@@ -5,6 +5,7 @@ import categoryModel from '../../../DB/Models/category.model.js'
 import cloudinaryConnection from '../../utils/cloudinary.js'
 import generateUniqueString from '../../utils/generate-Unique-String.js'
 import axios from 'axios'
+import { APIFeatures } from '../../utils/api-features.js'
 
 //======================= add brand =======================//
 export const addBrand = async (req, res, next) => {
@@ -266,4 +267,38 @@ export const getBrandsBySubCategory = async (req, res, next) => {
     message: `All Brands of Sub-Category ID : ${subCategoryId}`,
     brands,
   })
+}
+
+//================================= get all brands paginated ====================//
+export const getAllBrandsPaginated = async (req, res, next) => {
+  // destruct the page number from query
+  const { page } = req.query
+  // we set the size of Brands per page because we know our data 🔥
+  const size = 2
+  // we get total pages number to be sent in response to client
+  const pages = Math.ceil((await Brand.find().countDocuments()) / size)
+
+  const paginationFeature = new APIFeatures(Brand.find()).pagination({
+    page,
+    size,
+  })
+
+  const brands = await paginationFeature.mongooseQuery
+  if (!brands)
+    return next(new Error('Error while getting brands from search method'))
+
+  res.status(200).json({ message: `Brands`, pages, page: +page, brands })
+}
+
+//================================= get all brands filtered ====================//
+export const getAllBrandsFiltered = async (req, res, next) => {
+  const { ...filter } = req.query
+
+  const filteredFeature = new APIFeatures(Brand.find()).filters(filter)
+
+  const brands = await filteredFeature.mongooseQuery
+  if (!brands)
+    return next(new Error('Error while getting brands from filter method'))
+
+  res.status(200).json({ message: `Brands`, brands })
 }

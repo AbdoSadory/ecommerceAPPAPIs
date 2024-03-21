@@ -16,6 +16,12 @@ export const getBrandsBySubCategory = {
     subCategoryId: Joi.string().custom(isObjectId).required(),
   }),
 }
+export const allBrandsPaginatedSchema = {
+  query: Joi.object({
+    page: Joi.number().min(1).required(),
+  }),
+}
+
 export const updateBrandSchema = {
   params: Joi.object({ brandId: Joi.string().custom(isObjectId) }),
   body: Joi.object({ name: Joi.string(), oldPublicId: Joi.string() }),

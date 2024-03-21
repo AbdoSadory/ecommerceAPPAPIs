@@ -27,6 +27,15 @@ router.get(
   validationMiddleware(brandValidationSchemas.getBrandsBySubCategory),
   expressAsyncHandler(brandController.getBrandsBySubCategory)
 )
+router.get(
+  '/paginatedBrands',
+  validationMiddleware(brandValidationSchemas.allBrandsPaginatedSchema),
+  expressAsyncHandler(brandController.getAllBrandsPaginated)
+)
+router.get(
+  '/filteredBrands',
+  expressAsyncHandler(brandController.getAllBrandsFiltered)
+)
 router.post(
   '/',
   auth(endPointsRoles.ADD_BRAND),
