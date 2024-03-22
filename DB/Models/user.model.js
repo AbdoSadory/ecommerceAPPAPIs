@@ -60,6 +60,7 @@ const userSchema = new Schema(
     deletedAt: {
       type: String,
     },
+    token: { type: String },
   },
   { timestamps: true }
 )

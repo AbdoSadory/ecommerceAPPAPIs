@@ -151,6 +151,7 @@ export const signIn = async (req, res, next) => {
   // updated isLoggedIn = true  in database
 
   user.isLoggedIn = true
+  user.token = token
   await user.save()
 
   res.status(200).json({
