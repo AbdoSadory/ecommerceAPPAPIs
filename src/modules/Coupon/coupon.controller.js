@@ -132,3 +132,155 @@ export const getAllCouponsFiltered = async (req, res, next) => {
 
   res.status(200).json({ message: `Coupons`, coupons })
 }
+
+//================================= get disabled coupons ====================//
+export const getDisabledCoupons = async (req, res, next) => {
+  const disabledCoupons = await Coupon.find({ isEnabled: false })
+  if (!disabledCoupons)
+    return next(new Error('Error while getting disabled coupons '))
+
+  res.status(200).json({ message: `Disabled Coupons`, disabledCoupons })
+}
+
+//================================= get enabled coupons ====================//
+export const getEnabledCoupons = async (req, res, next) => {
+  const enabledCoupons = await Coupon.find({ isEnabled: true })
+  if (!enabledCoupons)
+    return next(new Error('Error while getting enabled coupons '))
+
+  res.status(200).json({ message: `Enabled Coupons`, enabledCoupons })
+}
+
+//================================= get coupon by id ====================//
+export const getCouponById = async (req, res, next) => {
+  const { couponId } = req.params
+  const coupon = await Coupon.findById(couponId)
+  if (!coupon) return next(new Error('no coupon with this id ', { cause: 404 }))
+
+  res.status(200).json({ message: `Coupon ID : ${couponId}`, coupon })
+}
+
+//================================= update coupon ====================//
+export const updateCoupon = async (req, res, next) => {
+  // destruct couponId
+  const { couponId } = req.params
+  // destruct data from body
+  const { couponCode, couponAmount, fromDate, toDate, isFixed, isPercentage } =
+    req.body
+
+  // destruct id of authenticated User
+  const { _id } = req.authUser
+
+  //check coupon if is existed
+  const isCouponExisted = await Coupon.findById(couponId)
+  if (!isCouponExisted)
+    return next({
+      message: "Coupon isn't existed with this id",
+      cause: 404,
+    })
+  //check couponCode if is existed with another coupon
+  if (couponCode) {
+    // couponcode check
+    const isCouponCodeExist = await Coupon.findOne({
+      couponCode,
+      _id: { $ne: couponId },
+    })
+    if (isCouponCodeExist)
+      return next({
+        message: 'Coupon code already exist with another coupon',
+        cause: 409,
+      })
+
+    isCouponExisted.couponCode = couponCode
+  }
+  couponAmount && (isCouponExisted.couponAmount = couponAmount)
+  fromDate && (isCouponExisted.fromDate = fromDate)
+  toDate && (isCouponExisted.toDate = toDate)
+
+  // check isFixed not equal undefined
+  if (isFixed !== undefined) isCouponExisted.isFixed = isFixed
+
+  // check isPercentage not equal undefined
+  if (isPercentage !== undefined) {
+    if (isCouponExisted.couponAmount > 100)
+      return next({ message: 'Percentage should be less than 100', cause: 400 })
+
+    isCouponExisted.isPercentage = isPercentage
+  }
+
+  isCouponExisted.updatedBy = _id
+
+  // update
+  const updatedCoupon = await isCouponExisted.save()
+  res
+    .status(200)
+    .json({ message: 'Coupon has been updated successfully', updatedCoupon })
+}
+
+//================================= delete coupon ====================//
+export const deleteCoupon = async (req, res, next) => {
+  const { couponId } = req.params
+  const { _id } = req.authUser
+  const coupon = await Coupon.findByIdAndUpdate(couponId, {
+    isDeleted: true,
+    deletedAt: DateTime.now().toISO(),
+    deletedBy: _id,
+  })
+  if (!coupon) return next(new Error('no coupon with this id ', { cause: 404 }))
+
+  const couponUsers = await CouponUsers.updateMany(
+    { couponId },
+    {
+      isDeleted: true,
+      deletedAt: DateTime.now().toISO(),
+      deletedBy: _id,
+    }
+  )
+
+  if (!couponUsers.upsertedCount) {
+    return next(new Error('No documents have been deleted in coupon Users'))
+  }
+  res
+    .status(200)
+    .json({ message: `Coupon ID : ${couponId} has been deleted successfully` })
+}
+
+//================================= change coupon activation ====================//
+export const changeCouponActivation = async (req, res, next) => {
+  const { couponId } = req.params
+  const { isEnabled } = req.query
+  const { _id } = req.authUser
+
+  // parse the value of isEnabled
+  const couponActivation = JSON.parse(isEnabled)
+
+  //construct the query object to set and unset
+  const query = { set: {}, unset: {} }
+
+  query.set.isEnabled = couponActivation
+
+  if (couponActivation === true) {
+    query.set.enabledAt = DateTime.now().toISO()
+    query.set.enabledBy = _id
+    query.unset.disabledAt = 1
+    query.unset.disabledBy = 1
+  } else if (couponActivation === false) {
+    query.set.disabledAt = DateTime.now().toISO()
+    query.set.disabledBy = _id
+    query.unset.enabledAt = 1
+    query.unset.enabledBy = 1
+  }
+
+  //find and update
+  const coupon = await Coupon.findOneAndUpdate(
+    { _id: couponId, isDeleted: false },
+    { $set: query.set, $unset: query.unset },
+    { new: true }
+  )
+
+  if (!coupon) return next(new Error('Error while updating coupon activation '))
+
+  res
+    .status(200)
+    .json({ message: `Coupon activation has been updated`, coupon })
+}

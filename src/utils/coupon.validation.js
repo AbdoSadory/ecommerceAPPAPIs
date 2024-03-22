@@ -4,8 +4,12 @@ import couponUsersModel from '../../DB/Models/coupon-users.model.js'
 
 export async function applyCouponValidation(couponCode, userId) {
   // couponCodeCheck
-  const coupon = await couponModel.findOne({ couponCode })
-  if (!coupon) return { message: 'CouponCode is invalid', status: 400 }
+  const coupon = await couponModel.findOne({ couponCode, isDeleted: false })
+  if (!coupon) return { message: "CouponCode isn't existed", status: 404 }
+
+  // isEnabled Check
+  if (!coupon.isEnabled)
+    return { message: 'this coupon is  disabled', status: 400 }
 
   // couponStatus Check
   if (

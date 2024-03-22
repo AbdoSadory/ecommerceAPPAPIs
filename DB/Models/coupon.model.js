@@ -52,6 +52,10 @@ const couponSchema = new mongoose.Schema(
       type: String,
     },
     deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    isEnabled: {
+      type: Boolean,
+      default: true,
+    },
     disabledAt: {
       type: String,
     },
