@@ -33,6 +33,7 @@ export const initiateApp = (app, express) => {
   app.use('/cart', routers.cartRouter)
   app.use('/coupon', routers.couponRouter)
   app.use('/order', routers.orderRouter)
+  app.use('/review', routers.reviewRouter)
 
   app.use('*', (req, res) => {
     return res.json({ message: 'Invalid URL' })

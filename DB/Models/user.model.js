@@ -65,4 +65,9 @@ const userSchema = new Schema(
   { timestamps: true }
 )
 
+userSchema.virtual('Reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'userId',
+})
 export default mongoose.models.User || model('User', userSchema)

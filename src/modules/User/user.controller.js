@@ -11,6 +11,7 @@ import couponModel from '../../../DB/Models/coupon.model.js'
 import orderModel from '../../../DB/Models/order.model.js'
 import productModel from '../../../DB/Models/product.model.js'
 import subCategoryModel from '../../../DB/Models/sub-category.model.js'
+import reviewModel from '../../../DB/Models/review.model.js'
 /**
  * check if user is existed
  * check if it's verified
@@ -130,7 +131,7 @@ export const deleteUser = async (req, res, next) => {
     }
   )
   await cartModel.updateMany(
-    { addedBy: userId },
+    { userId: userId },
     {
       isDeleted: true,
       deletedAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
@@ -154,7 +155,7 @@ export const deleteUser = async (req, res, next) => {
     }
   )
   await couponUsersModel.updateMany(
-    { addedBy: userId },
+    { userId: userId },
     {
       isDeleted: true,
       deletedAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
@@ -170,7 +171,7 @@ export const deleteUser = async (req, res, next) => {
     }
   )
   await orderModel.updateMany(
-    { addedBy: userId },
+    { user: userId },
     {
       isDeleted: true,
       deletedAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
@@ -179,6 +180,14 @@ export const deleteUser = async (req, res, next) => {
   )
   await productModel.updateMany(
     { addedBy: userId },
+    {
+      isDeleted: true,
+      deletedAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
+      deletedBy: userId,
+    }
+  )
+  await reviewModel.updateMany(
+    { userId: userId },
     {
       isDeleted: true,
       deletedAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),

@@ -64,7 +64,12 @@ const productSchema = new Schema(
     },
     deletedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 )
 
+productSchema.virtual('Reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'productId',
+})
 export default mongoose.models.Product || model('Product', productSchema)
