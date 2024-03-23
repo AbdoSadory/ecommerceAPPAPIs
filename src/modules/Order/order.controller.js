@@ -1,5 +1,5 @@
 //================================= add   order  ====================================
-
+import fs from 'fs'
 import { checkProductAvailability } from '../Cart/utils/check-product-in-db.js'
 import Order from '../../../DB/Models/order.model.js'
 import CouponUsers from '../../../DB/Models/coupon-users.model.js'
@@ -17,6 +17,9 @@ import {
   createStripeCoupon,
   refundPaymentIntent,
 } from '../../payment-handler/stripe.js'
+import { nanoid } from 'nanoid'
+import createInvoice from '../../utils/pdfkit.js'
+import sendEmailService from '../../services/send-email.service.js'
 
 export const createOrder = async (req, res, next) => {
   //destructure the request body
@@ -32,7 +35,7 @@ export const createOrder = async (req, res, next) => {
     country,
   } = req.body
 
-  const { _id: user } = req.authUser
+  const { _id: user, email: userEmail } = req.authUser
   // coupon code check
   let coupon = null
   if (couponCode) {
@@ -111,9 +114,65 @@ export const createOrder = async (req, res, next) => {
       orderStatus: order.orderStatus,
     },
   ])
-  res
-    .status(201)
-    .json({ message: 'Order has been created successfully', order, orderQR })
+  // Invoice
+  // orderCode
+  const orderCode = `${req.authUser.username}_${nanoid(3)}`
+  // invoice object to be sent to createInvoice function
+  const orderInvoice = {
+    orderCode,
+    date: order.createdAt,
+    items: order.orderItems,
+    subTotal: order.shippingPrice,
+    paidAmount: order.totalPrice,
+    shipping: {
+      name: req.authUser.username,
+      address: order.shippingAddress.address,
+      city: order.shippingAddress.city,
+      state: order.shippingAddress.city,
+      country: order.shippingAddress.country,
+    },
+  }
+  // create name for pdf
+  const fileName = `${orderCode}.pdf`
+  // create pdf
+  await createInvoice(orderInvoice, fileName)
+  // send pdf to user through email
+  const isEmailSent = await sendEmailService({
+    to: userEmail,
+    subject: `Invoice for order: ${order._id}`,
+    message: `
+        <h1>please find your invoice in the attachment</h1>
+        `,
+    attachments: [
+      {
+        filename: fileName,
+        path: `./Files/${fileName}`,
+        contentType: 'application/pdf',
+      },
+    ],
+  })
+  if (!isEmailSent) {
+    return next(new Error('Email is not sent, please try again later'))
+  }
+
+  // delete pdf from our system to free up some space
+
+  try {
+    fs.unlinkSync(`./Files/${fileName}`)
+  } catch (err) {
+    return next(
+      new Error(
+        "Can't delete invoice file, but order has been added successfully"
+      )
+    )
+  }
+
+  res.status(201).json({
+    Invoice: 'Invoice has been sent to email inbox',
+    message: 'Order has been created successfully',
+    order,
+    orderQR,
+  })
 }
 
 export const convertFromcartToOrder = async (req, res, next) => {
@@ -128,7 +187,7 @@ export const convertFromcartToOrder = async (req, res, next) => {
     country,
   } = req.body
 
-  const { _id: user } = req.authUser
+  const { _id: user, email: userEmail } = req.authUser
   // cart items
   const userCart = await getUserCart(user)
   if (!userCart) return next({ message: "Cart hasn't been found", cause: 404 })
@@ -215,9 +274,66 @@ export const convertFromcartToOrder = async (req, res, next) => {
       orderStatus: order.orderStatus,
     },
   ])
-  res
-    .status(201)
-    .json({ message: 'Order has been created successfully', order, orderQR })
+
+  // Invoice
+  // orderCode
+  const orderCode = `${req.authUser.username}_${nanoid(3)}`
+  // invoice object to be sent to createInvoice function
+  const orderInvoice = {
+    orderCode,
+    date: order.createdAt,
+    items: order.orderItems,
+    subTotal: order.shippingPrice,
+    paidAmount: order.totalPrice,
+    shipping: {
+      name: req.authUser.username,
+      address: order.shippingAddress.address,
+      city: order.shippingAddress.city,
+      state: order.shippingAddress.city,
+      country: order.shippingAddress.country,
+    },
+  }
+
+  // create name for pdf
+  const fileName = `${orderCode}.pdf`
+  // create pdf
+  await createInvoice(orderInvoice, fileName)
+  // send pdf to user through email
+  const isEmailSent = await sendEmailService({
+    to: userEmail,
+    subject: `Invoice for order: ${order._id}`,
+    message: `
+        <h1>please find your invoice in the attachment</h1>
+        `,
+    attachments: [
+      {
+        filename: fileName,
+        path: `./Files/${fileName}`,
+        contentType: 'application/pdf',
+      },
+    ],
+  })
+  if (!isEmailSent) {
+    return next(new Error('Email is not sent, please try again later'))
+  }
+
+  // delete pdf from our system to free up some space
+  try {
+    fs.unlinkSync(`./Files/${fileName}`)
+  } catch (err) {
+    return next(
+      new Error(
+        "Can't delete invoice file, but order has been added successfully"
+      )
+    )
+  }
+
+  res.status(201).json({
+    Invoice: 'Invoice has been sent to email inbox',
+    message: 'Order has been created successfully',
+    order,
+    orderQR,
+  })
 }
 
 // ======================= order delivery =======================//
