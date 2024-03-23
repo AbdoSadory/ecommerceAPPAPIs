@@ -2,9 +2,10 @@ import { scheduleJob } from 'node-schedule'
 import Coupon from '../../DB/Models/coupon.model.js'
 // import moment from "moment";
 import { DateTime } from 'luxon'
+import orderModel from '../../DB/Models/order.model.js'
 
 export function cronToChangeExpiredCoupons() {
-  scheduleJob('30 * * * * *', async () => {
+  scheduleJob('* * 0 * * *', async () => {
     const coupons = await Coupon.find({ couponStatus: 'valid' })
     for (const coupon of coupons) {
       if (DateTime.fromISO(coupon.toDate) < DateTime.now()) {
@@ -15,18 +16,19 @@ export function cronToChangeExpiredCoupons() {
   })
 }
 
-export function cronToChangeExpiredCouponsV1() {
-  scheduleJob('*/5 * * * * *', async () => {
-    console.log('cronToChangeExpiredCoupons()  is running every 5 seconds V1')
-  })
-}
-export function cronToChangeExpiredCouponsV2() {
-  scheduleJob('*/5 * * * * *', async () => {
-    console.log('cronToChangeExpiredCoupons()  is running every 5 seconds V2')
-  })
-}
-export function cronToChangeExpiredCouponsV3() {
-  scheduleJob('40 * * * * *', async () => {
-    console.log('cronToChangeExpiredCoupons()  is running every 5 seconds V3')
+export function cronToDeleteOrdersOlderThanDay() {
+  scheduleJob('* * 0 * * *', async () => {
+    const dayInMS = 24 * 60 * 60 * 1000
+    const orders = await orderModel.find({ orderStatus: 'Pending' })
+    for (const order of orders) {
+      // if the difference between now and the order createdAt more than day duration in ms
+      // then cancel it
+      // this operation runs automatically everyday at 12 am
+      if (DateTime.now() - DateTime.fromISO(order.createdAt) >= dayInMS) {
+        order.orderStatus = 'Cancelled'
+        order.cancelledAt = DateTime.now().toISO()
+      }
+      await order.save()
+    }
   })
 }

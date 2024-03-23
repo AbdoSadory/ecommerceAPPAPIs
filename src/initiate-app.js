@@ -8,9 +8,7 @@ import * as routers from './modules/index.routes.js'
 
 import {
   cronToChangeExpiredCoupons,
-  cronToChangeExpiredCouponsV1,
-  cronToChangeExpiredCouponsV2,
-  cronToChangeExpiredCouponsV3,
+  cronToDeleteOrdersOlderThanDay,
 } from './utils/crons.js'
 
 export const initiateApp = (app, express) => {
@@ -41,7 +39,7 @@ export const initiateApp = (app, express) => {
   app.use(globalResponse, rollbackUploadedFiles, rollbackSavedDocuments)
 
   cronToChangeExpiredCoupons()
-  gracefulShutdown()
+  cronToDeleteOrdersOlderThanDay()
   app.listen(port, () =>
     console.log(`Server is listening on port ${port}! 🔥🔥🔥`)
   )
