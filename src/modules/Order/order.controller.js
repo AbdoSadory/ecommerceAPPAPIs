@@ -337,7 +337,7 @@ export const convertFromcartToOrder = async (req, res, next) => {
 }
 
 // ======================= order delivery =======================//
-export const delieverOrder = async (req, res, next) => {
+export const deliverOrder = async (req, res, next) => {
   const { orderId } = req.params
 
   const updateOrder = await Order.findOneAndUpdate(

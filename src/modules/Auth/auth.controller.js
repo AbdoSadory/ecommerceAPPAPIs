@@ -87,6 +87,10 @@ export const signUp = async (req, res, next) => {
 export const verifyEmail = async (req, res, next) => {
   const { token } = req.query
   const decodedData = jwt.verify(token, process.env.JWT_SECRET_VERFICATION)
+
+  if (!decodedData || !decodedData.email)
+    return next(new Error('invalid token payload', { cause: 400 }))
+
   // get uset by email , isEmailVerified = false
   const user = await User.findOneAndUpdate(
     {

@@ -77,18 +77,10 @@ export const addCoupon = async (req, res, next) => {
     .json({ message: 'Coupon added successfully', coupon, couponUsers })
 }
 
-/**
- * Anotehr APIs from coupon module
- * getAllCoupons
- * getCouponByCode
- * updateCoupon  , set the loggedInUserId as updatedBy
- * deleteCoupon
- */
-
-//=========================== For Testing ===========================//
+//=========================== For Testing The coupon ===========================//
 export const validateCouponApi = async (req, res, next) => {
   const { code } = req.body
-  const { _id: userId } = req.authUser // const userId  = req.authUser._id
+  const { _id: userId } = req.authUser
 
   // applyCouponValidation
   const isCouponValid = await applyCouponValidation(code, userId)
@@ -221,11 +213,20 @@ export const updateCoupon = async (req, res, next) => {
 export const deleteCoupon = async (req, res, next) => {
   const { couponId } = req.params
   const { _id } = req.authUser
-  const coupon = await Coupon.findByIdAndUpdate(couponId, {
-    isDeleted: true,
-    deletedAt: DateTime.now().toISO(),
-    deletedBy: _id,
-  })
+  const coupon = await Coupon.findOneAndUpdate(
+    { _id: couponId, isDeleted: false },
+    {
+      $set: {
+        isDeleted: true,
+        deletedAt: DateTime.now().toISO(),
+        deletedBy: _id,
+        isEnabled: false,
+        disabledAt: DateTime.now().toISO(),
+        disabledBy: _id,
+      },
+      $unset: { enabledAt: DateTime.now().toISO(), enabledBy: _id },
+    }
+  )
   if (!coupon) return next(new Error('no coupon with this id ', { cause: 404 }))
 
   const couponUsers = await CouponUsers.updateMany(
@@ -237,7 +238,7 @@ export const deleteCoupon = async (req, res, next) => {
     }
   )
 
-  if (!couponUsers.upsertedCount) {
+  if (!couponUsers.modifiedCount) {
     return next(new Error('No documents have been deleted in coupon Users'))
   }
   res

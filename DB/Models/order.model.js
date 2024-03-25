@@ -60,6 +60,7 @@ const orderSchema = new mongoose.Schema(
       type: String,
     },
     deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    payment_intent: { type: String },
   },
   { timestamps: true }
 )

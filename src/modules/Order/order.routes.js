@@ -27,7 +27,7 @@ orderRouter.put(
   '/:orderId',
   auth(endpointsRoles.DELIVERED_ORDER),
   validationMiddleware(orderSchemas.deliverOrderSchema),
-  expressAsyncHandler(orderController.delieverOrder)
+  expressAsyncHandler(orderController.deliverOrder)
 )
 
 orderRouter.post(
