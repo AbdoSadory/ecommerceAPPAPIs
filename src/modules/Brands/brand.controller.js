@@ -201,10 +201,11 @@ export const deleteBrand = async (req, res, next) => {
     )
 
   //  5- delete the related Products of this brand by create request on http://localhost:3000/product/productsByBrandId
+  // ${req.protocol}://${req.headers.host}/ => for production
   try {
     await axios({
       method: 'delete',
-      url: `http://localhost:3000/product/productsByBrandId?brandId=${brandId}`,
+      url: `${req.protocol}://${req.headers.host}/product/productsByBrandId?brandId=${brandId}`,
       headers: {
         accesstoken,
       },
