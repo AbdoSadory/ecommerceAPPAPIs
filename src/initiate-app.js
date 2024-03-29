@@ -4,6 +4,7 @@ import { globalResponse } from './middlewares/global-response.middleware.js'
 import { rollbackSavedDocuments } from './middlewares/rollback-saved-documnets.middleware.js'
 import { rollbackUploadedFiles } from './middlewares/rollback-uploaded-files.middleware.js'
 
+import cors from 'cors'
 import * as routers from './modules/index.routes.js'
 
 import {
@@ -17,7 +18,7 @@ export const initiateApp = (app, express) => {
   app.use(express.json())
 
   db_connection()
-
+  app.use(cors())
   app.get('/', (req, res) => {
     console.log('/')
     return res.json({ message: 'Hello E-Commerce!' })
