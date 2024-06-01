@@ -29,7 +29,7 @@ export const signUp = async (req, res, next) => {
   }
   // 3- send confirmation email to the user
   const usertoken = jwt.sign({ email }, process.env.JWT_SECRET_VERFICATION, {
-    expiresIn: '2m',
+    expiresIn: '15m',
   })
 
   const isEmailSent = await sendEmailService({
@@ -150,7 +150,7 @@ export const signIn = async (req, res, next) => {
   const token = jwt.sign(
     { email, id: user._id, loggedIn: true },
     process.env.JWT_SECRET_LOGIN,
-    { expiresIn: '1d' }
+    { expiresIn: '15d' }
   )
   // updated isLoggedIn = true  in database
 

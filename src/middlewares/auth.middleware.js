@@ -48,7 +48,7 @@ export const auth = (accessRoles) => {
             loggedIn: true,
           },
           process.env.JWT_SECRET_LOGIN,
-          { expiresIn: '3d' }
+          { expiresIn: '15d' }
         )
         findUserWithToken.token = refreshedToken
         await findUserWithToken.save()
